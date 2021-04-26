@@ -1,0 +1,8 @@
+{
+  "name": "custom-menu-panel",
+  "description": "Quick custom menu for launching your favorite applications",
+  "uuid": "custom-menu-panel@AndreaBenini",
+  "shell-version": [
+    "40"
+  ]
+}
