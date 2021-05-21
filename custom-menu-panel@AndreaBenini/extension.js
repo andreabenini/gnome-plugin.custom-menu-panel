@@ -2,7 +2,7 @@
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -13,17 +13,23 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * SPDX-License-Identifier: GPL-2.0-or-later
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
+/**
+ * @author Ben
+ * @see    https://github.com/andreabenini/gnome-plugin.custom-menu-panel
  */
 
 /* exported init */
 
-const GETTEXT_DOMAIN = 'my-indicator-extension';
+const GETTEXT_DOMAIN = 'custom-menu-panel';
+const CONFIGURATION_FILE = '/.entries.json';
 
 const { GObject, St } = imports.gi;
 
 const Gettext = imports.gettext.domain(GETTEXT_DOMAIN);
-const _ = Gettext.gettext;
+const _       = Gettext.gettext;
 
 const ExtensionUtils    = imports.misc.extensionUtils;
 const Lang              = imports.lang;
@@ -35,25 +41,20 @@ const PopupMenu         = imports.ui.popupMenu;
 
 const Me                = imports.misc.extensionUtils.getCurrentExtension();
 const Config            = Me.imports.config
-// const Core              = Me.imports.core;
-// const Convenience       = Me.imports.convenience;
-// const Prefs             = Me.imports.prefs;
 
-const LOGGER_INFO = 0;
-const LOGGER_WARNING = 1;
-const LOGGER_ERROR = 2;
+const LOGGER_INFO       = 0;
+const LOGGER_WARNING    = 1;
+const LOGGER_ERROR      = 2;
 
 
 const Indicator = GObject.registerClass(
     class Indicator extends PanelMenu.Button {
         _init() {
-            super._init(0.0, _('My Shiny Indicator'));
-
+            super._init(0.0, _('Custom Menu Panel Indicator'));
             this.add_child(new St.Icon({
                 icon_name: 'view-list-bullet-symbolic',
                 style_class: 'system-status-icon',
             }));
-
             this._loadSetup();
 
             // let item = new PopupMenu.PopupMenuItem(_('Show Notification'));
@@ -67,11 +68,16 @@ const Indicator = GObject.registerClass(
          * LOAD Program settings from .entries.json file
          */
         _loadSetup() {
+            this.menu.removeAll();
             // Loading configuration from file
             this.configLoader = new Config.Loader();
-            this.configLoader.loadConfig(GLib.get_home_dir() + "/.entries.json");   // $HOME/.entries.json //
+            try {
+                this.configLoader.loadConfig(GLib.get_home_dir() + CONFIGURATION_FILE);         // $HOME/.entries.json
+            } catch(e) {
+                this.configLoader.saveDefaultConfig(GLib.get_home_dir() + CONFIGURATION_FILE);  // create default entries
+            }
             // Build the menu
-            this.menu.removeAll();
+            let i = 0;
             for (let i in this.configLoader.entries) {
                 let item = this.configLoader.entries[i].createItem();
                 this.menu.addMenuItem(item);

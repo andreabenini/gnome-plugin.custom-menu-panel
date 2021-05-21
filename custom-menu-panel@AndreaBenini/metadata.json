@@ -2,6 +2,7 @@
   "name": "custom-menu-panel",
   "description": "Quick custom menu for launching your favorite applications",
   "uuid": "custom-menu-panel@AndreaBenini",
+  "version": "1.0.1",
   "shell-version": [
     "40"
   ]

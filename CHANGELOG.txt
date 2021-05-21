@@ -1,0 +1,5 @@
+2021-05 v1.0.1
+        - Bugfix. On startup it creates $HOME/.entries.json file when it does not exists for later editing
+
+2021-05 v1.0.0
+        - Note.  First version published on gnome extensions portal, requires .entries.json to work properly

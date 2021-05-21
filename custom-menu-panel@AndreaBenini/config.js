@@ -442,19 +442,45 @@ var Loader = new Lang.Class({
         config_parser.load_from_file(filename);
 
         let conf = convertJson(config_parser.get_root());
-        if(conf.entries == undefined)
+        if (conf.entries == undefined)
             throw new Error("Key 'entries' not found.");
-        if(conf.deftype) {
-            for(let tname in conf.deftype) {
-                if(type_map[tname])
+        if (conf.deftype) {
+            for (let tname in conf.deftype) {
+                if (type_map[tname])
                     throw new Error("Type \""+tname+"\" duplicated.");
                 type_map[tname] = new DerivedEntry(conf.deftype[tname]);
             }
         }
 
-        for(let conf_i in conf.entries) {
+        for (let conf_i in conf.entries) {
             let entry_prop = conf.entries[conf_i];
             this.entries.push(createEntry(entry_prop));
         }
     },
+
+
+    saveDefaultConfig: function(filename) {
+        // Write default config
+        const PERMISSIONS_MODE = 0o640;
+        const jsonString = JSON.stringify({
+            "_homepage_": "https://github.com/andreabenini/gnome-plugin.custom-menu-panel",
+            "_examples_": "https://github.com/andreabenini/gnome-plugin.custom-menu-panel/tree/main/examples",
+            "entries": [ {
+                "type": "launcher",
+                "title": "Edit menu",
+                "command": "gedit $HOME/.entries.json"
+            } ]
+        }, null, 4);
+        let fileConfig = Gio.File.new_for_path(filename);
+        if (GLib.mkdir_with_parents(fileConfig.get_parent().get_path(), PERMISSIONS_MODE) === 0) {
+            fileConfig.replace_contents(jsonString, null, false, Gio.FileCreateFlags.REPLACE_DESTINATION, null);
+        }
+        // Try to load newly saved file
+        try {
+            this.loadConfig(filename);
+        } catch(e) {
+            Main.notify(_('Cannot create and load file: '+filename));
+        }
+    }, /**/
+
 });
