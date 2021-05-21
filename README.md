@@ -7,5 +7,5 @@ Custom menu on Gnome Top Bar with your favorite program shortcuts.
 - Edit `.entries.json` to match your needs
 - Copy `.entries.json` file to `$HOME/`  
 
-If you edit .entries.json while running gnome please ensure to reload Gnome Window Manager (Alt+F2, 'r')
-Arch Linux, X11, Gnome v40.1.0
+If you edit .entries.json while running gnome please ensure to reload Gnome Window Manager (Alt+F2, "r")  
+Tested with: Arch Linux, X11, Gnome v40.1.0
