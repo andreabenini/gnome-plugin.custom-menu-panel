@@ -6,17 +6,28 @@
       "command": "/usr/bin/xfreerdp +clipboard /v:192.168.0.x /d:DOMAIN /u:USER /p:'PASSWORD' /monitors:1 /f /kbd:0x00020409"
     },
     {
-      "type": "launcher",
-      "title": "RDP Desktop (Generic)",
-      "command": "$HOME/bin/rdp.generic"
-    },
-    {
       "type": "separator"
     },
     {
-      "type": "launcher",
-      "title": "Apple Keyboard Function Keys fix",
-      "command": "$HOME/bin/keyboard.mac.functionkeys.sh"
+        "type": "submenu",
+        "title": "Examples",
+        "entries": [
+            {
+              "type": "launcher",
+              "title": "Desktop Windows",
+              "command": "/usr/bin/xfreerdp +clipboard /v:192.168.0.x /d:DOMAIN /u:USER /p:'PASSWORD' /monitors:1 /f /kbd:0x00020409"
+            },
+            {
+              "type": "launcher",
+              "title": "RDP Desktop (Generic)",
+              "command": "$HOME/bin/rdp.generic"
+            },
+            {
+              "type": "launcher",
+              "title": "Apple Keyboard Function Keys fix",
+              "command": "$HOME/bin/keyboard.mac.functionkeys.sh"
+            },
+        ]
     },
     {
       "type": "launcher",
