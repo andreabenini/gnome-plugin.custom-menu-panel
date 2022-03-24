@@ -8,4 +8,4 @@ Custom menu on Gnome Top Bar with your favorite program shortcuts.
 - Copy `.entries.json` file to `$HOME/`  
 
 If you edit .entries.json while running gnome please ensure to reload Gnome Window Manager (Alt+F2, "r")  
-Tested with: Arch Linux, X11, Gnome v40.1.0
+Tested with: Arch Linux, X11, Gnome v41.1.0

@@ -1,5 +1,9 @@
+2022-03 v1.1.0
+        - New widget: status toggler. Detects and toggle on/off the widget with your favorite command
+
 2021-05 v1.0.1
         - Bugfix. On startup it creates $HOME/.entries.json file when it does not exists for later editing
 
 2021-05 v1.0.0
         - Note.  First version published on gnome extensions portal, requires .entries.json to work properly
+

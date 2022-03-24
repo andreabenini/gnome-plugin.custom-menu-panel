@@ -33,7 +33,7 @@
               "type": "launcher",
               "title": "Apple Keyboard Function Keys fix",
               "command": "$HOME/bin/keyboard.mac.functionkeys.sh"
-            },
+            }
         ]
     },
     {
