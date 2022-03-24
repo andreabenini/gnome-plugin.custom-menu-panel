@@ -6,6 +6,13 @@
       "command": "/usr/bin/xfreerdp +clipboard /v:192.168.0.x /d:DOMAIN /u:USER /p:'PASSWORD' /monitors:1 /f /kbd:0x00020409"
     },
     {
+      "type": "toggler",
+      "title": "Use System Audio",
+      "command_on":  "$HOME/bin/audio.switch speaker",
+      "command_off": "$HOME/bin/audio.switch headset",
+      "detector":    "$HOME/bin/audio.switch status|grep speaker >/dev/null && echo yes"
+    },
+    {
       "type": "separator"
     },
     {

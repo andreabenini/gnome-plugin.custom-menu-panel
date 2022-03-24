@@ -194,13 +194,10 @@ const TogglerEntry = new Lang.Class({
 
     createItem: function() {
         this._try_destroy();
-
-        this.item = new PopupMenu.PopupSwitchMenuItem(this.title);
-        this.item.label.get_clutter_text().set_use_markup(true);
-        this.item.connect('toggled', Lang.bind(this, this._onManuallyToggled));
-
+	this.item = new PopupMenu.PopupSwitchMenuItem(this.title, false);
+	this.item.label.get_clutter_text().set_use_markup(true);
+	this.item.connect('toggled', Lang.bind(this, this._onManuallyToggled));
         this._loadState();
-
         return this.item;
     },
 
