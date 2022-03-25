@@ -2,6 +2,8 @@
 Custom menu on Gnome Top Bar with your favorite program shortcuts.
 
 ![Screenshot Preview](screenshot.png)
+![another Preview](widget.png)
+
 
 ### Usage:
 - Edit `.entries.json` to match your needs
