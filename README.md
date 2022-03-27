@@ -13,3 +13,13 @@ If you edit `.entries.json` while running gnome please ensure to reload Gnome Wi
 Tested with: Arch Linux, X11, Gnome v41.1.0
 
 
+## Manual
+### Launcher
+Create a new entry and put it in the menu
+```json
+    {
+      "type": "launcher",
+      "title": "Item Name on Menu",
+      "command": "/your/command/to/execute --with-parameters"
+    },
+```
