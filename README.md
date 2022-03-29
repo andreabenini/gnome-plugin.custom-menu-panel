@@ -36,3 +36,16 @@ Place a menu separator _(\<hr>)_
       "type": "separator"
     },
 ```
+
+### **- SubMenu**
+Create a submenu inside current menu, items inside the submenu are placed inside `entries`
+and they can be of any type (launcher, separator, submenu, ...)
+```json
+    {
+        "type": "submenu",
+        "title": "Menu Name",
+        "entries": [
+            //... Place your entries here ...//
+        ]
+    },
+```
