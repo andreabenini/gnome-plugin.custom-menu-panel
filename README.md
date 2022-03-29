@@ -49,3 +49,17 @@ and they can be of any type (launcher, separator, submenu, ...)
         ]
     },
 ```
+
+### **- Toggler**
+Create a toggle item on menu, it has a detector and ON|OFF commands.
+Command detector can be _activated|deactivated_ by a **0** _(success)_ return error level
+and later detected with a plain JavaScript eval. See graphical result on above screenshots
+```json
+    {
+      "type": "toggler",
+      "title":       "Widget Title",
+      "command_on":  "/command/when/turned/on",
+      "command_off": "/command/when/turned/off",
+      "detector":    "/command/detector > /dev/null && echo yes"
+    },
+```
