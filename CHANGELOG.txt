@@ -1,5 +1,11 @@
-2022-03 v1.1.0
+2022-03 v4.0.0
         - New widget: status toggler. Detects and toggle on/off the widget with your favorite command
+
+2021-07 v3.0.0
+        - Gnome 40 and 41 fixes
+
+2021-06 v2.0.0
+        - Project cleanup and refactoring
 
 2021-05 v1.0.1
         - Bugfix. On startup it creates $HOME/.entries.json file when it does not exists for later editing
