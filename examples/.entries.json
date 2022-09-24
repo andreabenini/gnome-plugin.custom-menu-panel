@@ -1,4 +1,8 @@
 {
+	"_homepage_": "https://github.com/andreabenini/gnome-plugin.custom-menu-panel",
+	"_examples_": "https://github.com/andreabenini/gnome-plugin.custom-menu-panel/tree/main/examples",
+	"editorExecutable": "gedit",
+	"terminalExecutable": "gnome-terminal",
   "entries": [
     {
       "type": "launcher",
