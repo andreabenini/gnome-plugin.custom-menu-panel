@@ -42,9 +42,9 @@
       "command": "/usr/bin/ffplay -x 640 -y 360 rtsp://192.168.0.x:5555/MyCamUnicast"
     },
     {
-      "type": "launcher",
-      "title": "Edit Menu",
-      "command": "/usr/bin/gedit $HOME/.entries.json"
-    }
+			"type": "launcher",
+			"title": "ls ~/",
+			"command": "gnome-terminal -- bash -i -c 'cd ~/; command ls -aF --color=auto; bash'"
+		}
   ]
 }

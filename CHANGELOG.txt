@@ -1,3 +1,12 @@
+2022-09-24 v5
+				Resolved issues:
+					- Default configuration file would overwrite the current ~/.entries file if any syntax error was detected during JSON parsing. The configuration file is now only overwritten if no file is currently present. If a JSON parsing error is discovered, a submenu entitled 'Config File Parse Error . . . ' is displayed in the custom menu and automatically expanded to show [Edit Config File], [Reload Config File] and [View Log in Journalctl].
+				Added capabilities:
+					- Added the ability to reload the configuration file, rebuilding the menu and revalidating the JSON syntax without having to restart Gnome using the "Alt-F2, r" method.
+					- Added 'Custom Menu Config' submenu to the end of the menu, regardless of the state of ~/.entries, containing [Edit Config File], [Reload Config File] and [View Log in Journalctl].
+					- Added optional constants in ~/.entries 'editorExecutable', defaulted to 'gedit' and 'terminalExecutable', defaulted to 'gnome-terminal'. These values are currently only used for the permanent 'Custom Menu Config' submenu items, where [Edit Config File] uses 'editorExecutable' and [View Log in Journalctl] uses 'terminalExecutable'. Tested 'editorExecutable' with Geany. Tested 'terminalExecutable' with Tilix.
+					- Added automatic expansion of the 'Custom Menu Config' submenu if ~/.entires JSON parsing fails.
+					
 2022-04 v4.1.0
         - Gnome 42 update
 
