@@ -87,17 +87,19 @@ function pipeOpen(cmdline, env, callback) {
     if(__pipeExecTimer === null) {
         __pipeExecTimer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 50,
             function() {
-            let param = __pipeOpenQueue.shift();
-            if(param === undefined) {
-                __pipeExecTimer = null;
-                return false;
+                let param = __pipeOpenQueue.shift();
+                if (param === undefined) {
+                    __pipeExecTimer = null;
+                    return false;
+                }
+                if (realPipeOpen) {
+                    realPipeOpen(param[0], param[1], param[2]);
+                }
+                return true;
             }
-            if(realPipeOpen) realPipeOpen(param[0], param[1], param[2]);
-            return true;
-        });
-
+        );
     }
-}
+} /**/
 
 function realPipeOpen(cmdline, env, callback) {
     let user_cb = callback;
@@ -121,7 +123,7 @@ function realPipeOpen(cmdline, env, callback) {
         });
     }
 
-    if(user_cb) {
+    if (user_cb) {
         let _pipedLauncher = new Gio.SubprocessLauncher({
             flags:
                 Gio.SubprocessFlags.STDERR_PIPE |
@@ -147,14 +149,22 @@ function realPipeOpen(cmdline, env, callback) {
 function _generalSpawn(command, env, title) {
     title = title || "Process";
     pipeOpen(command, env, function(stdout, stderr, exit_status) {
-        if(exit_status != 0) {
+        if (exit_status != 0) {
             log
             getLogger().warning(stderr);
-            getLogger().notify("proc", title +
-                " exited with status " + exit_status, stderr);
+            getLogger().notify("proc", title + " exited with status " + exit_status, stderr);
         }
     });
 }
+
+// Detect menu toggle on startup
+function _toggleDetect(command, env, object) {
+    pipeOpen(command, env, function(stdout, stderr, exit_status) {
+        if (exit_status == 0) {
+            object.item.setToggleState(true);
+        }
+    });
+} /**/
 
 function quoteShellArg(arg) {
     arg = arg.replace(/'/g, "'\"'\"'");
@@ -187,10 +197,11 @@ const TogglerEntry = new Lang.Class({
 
     createItem: function() {
         this._try_destroy();
-	this.item = new PopupMenu.PopupSwitchMenuItem(this.title, false);
-	this.item.label.get_clutter_text().set_use_markup(true);
-	this.item.connect('toggled', Lang.bind(this, this._onManuallyToggled));
+        this.item = new PopupMenu.PopupSwitchMenuItem(this.title, false);
+        this.item.label.get_clutter_text().set_use_markup(true);
+        this.item.connect('toggled', Lang.bind(this, this._onManuallyToggled));
         this._loadState();
+        _toggleDetect(this.detector, this.__env, this);
         return this.item;
     },
 
@@ -202,33 +213,35 @@ const TogglerEntry = new Lang.Class({
     },
 
     _onToggled: function(state) {
-        if(state)
+        if (state) {
             _generalSpawn(this.command_on, this.__env, this.title);
-        else
+        } else {
             _generalSpawn(this.command_off, this.__env, this.title);
+        }
     },
 
     _detect: function(callback) {
         // abort detecting if detector is an empty string
-        if(!this.detector)
+        if (!this.detector) {
             return;
-
+        }
         pipeOpen(this.detector, this.__env, function(out) {
             out = String(out);
             callback(!Boolean(out.match(/^\s*$/)));
         });
     },
 
+    // compare the new state with cached state notify when state is different
     compareState: function(new_state) {
-        // compare the new state with cached state notify when state is different
         let old_state = _toggler_state_cache[this.detector];
-        if(old_state === undefined) return;
-        if(old_state == new_state) return;
+        if (old_state === undefined) return;
+        if (old_state == new_state)  return;
 
-        if(this.notify_when.indexOf(new_state ? "on" : "off") >= 0) {
+        if (this.notify_when.indexOf(new_state ? "on" : "off") >= 0) {
             let not_str = this.title + (new_state ? " started." : " stopped.");
-            if(!new_state && this.auto_on)
+            if (!new_state && this.auto_on) {
                 not_str += " Attempt to restart it now.";
+            }
             getLogger().notify("state", not_str);
         }
     },
@@ -240,22 +253,21 @@ const TogglerEntry = new Lang.Class({
 
     _loadState: function() {
         let hash = JSON.stringify({ env: this.__env, detector: this.detector });
-        let state = _toggler_state_cache[hash]; 
-        if(state !== undefined)
-            this.item.setToggleState(state); // doesn't emit 'toggled'
+        let state = _toggler_state_cache[hash];
+        if (state !== undefined) {
+            this.item.setToggleState(state);            // doesn't emit 'toggled'
+        }
     },
 
     pulse: function() {
         this._detect(Lang.bind(this, function(state) {
             this.compareState(state);
-
             this._storeState(state);
             this._loadState();
-            //global.log(this.title + ': ' + this._manually_switched_off);
-
-            if(!state && !this._manually_switched_off && this.auto_on)
+            if (!state && !this._manually_switched_off && this.auto_on) {
                 // do not call setToggleState here, because command_on may fail
                 this._onToggled(this.item, true);
+            }
         }));
     },
 
@@ -270,17 +282,14 @@ const LauncherEntry = new Lang.Class({
 
     _init: function(prop) {
         this.parent(prop);
-
         this.command = prop.command || "";
     },
 
     createItem: function() {
         this._try_destroy();
-
         this.item = new PopupMenu.PopupMenuItem(this.title);
         this.item.label.get_clutter_text().set_use_markup(true);
         this.item.connect('activate', Lang.bind(this, this._onClicked));
-
         return this.item;
     },
 
@@ -300,12 +309,11 @@ const SubMenuEntry = new Lang.Class({
     _init: function(prop) {
         this.parent(prop)
 
-        if(prop.entries == undefined)
+        if (prop.entries == undefined) {
             throw new Error("Expected entries provided in submenu entry.");
-
+        }
         this.entries = [];
-
-        for(let i in prop.entries) {
+        for (let i in prop.entries) {
             let entry_prop = prop.entries[i];
             let entry = createEntry(entry_prop);
             this.entries.push(entry);
@@ -314,19 +322,17 @@ const SubMenuEntry = new Lang.Class({
 
     createItem: function() {
         this._try_destroy();
-
         this.item = new PopupMenu.PopupSubMenuMenuItem(this.title);
         this.item.label.get_clutter_text().set_use_markup(true);
-        for(let i in this.entries) {
+        for (let i in this.entries) {
             let entry = this.entries[i];
             this.item.menu.addMenuItem(entry.createItem());
         }
-
         return this.item;
     },
 
     pulse: function() {
-        for(let i in this.entries) {
+        for (let i in this.entries) {
             let entry = this.entries[i];
             entry.pulse();
         }

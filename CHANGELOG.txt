@@ -1,3 +1,10 @@
+2023-08 v4.2.1
+        - FIX: Status toggler widget wasn't checked on startup, now this item uses 'detector' property for it.
+               Detector command should return exit_status for a proper toggle setting:
+                       0 : Menu toggle ON  on startup
+                       1 : Menu toggle OFF on startup
+        - Code formatting cleanup
+
 2022-10 v4.1.1
         - Gnome 43 update
 
