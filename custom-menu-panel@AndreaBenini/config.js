@@ -77,12 +77,10 @@ const DerivedEntry = new Lang.Class({
     },
 });
 
-/*
- * callback: function (stdout, stderr, exit_status) { }
- */
 let __pipeOpenQueue = [];
 let __pipeExecTimer = null;
 
+/* callback: function (stdout, stderr, exit_status) { }  */
 function pipeOpen(cmdline, env, callback) {
     let param = [cmdline, env, callback]
     __pipeOpenQueue.push(param);
@@ -108,7 +106,6 @@ function realPipeOpen(cmdline, env, callback) {
     function wait_cb(_, _res) {
         let stdout_pipe = proc.get_stdout_pipe();
         let stderr_pipe = proc.get_stderr_pipe();
-
         let stdout_content;
         let stderr_content;
 
@@ -116,11 +113,9 @@ function realPipeOpen(cmdline, env, callback) {
         stdout_pipe.read_bytes_async(GLib.MAXINT16, 0, null, function(osrc, ores) {
             stdout_content = ByteArray.toString(stdout_pipe.read_bytes_finish(ores).get_data());
             stdout_pipe.close(null);
-
             stderr_pipe.read_bytes_async(GLib.MAXINT16, 0, null, function(esrc, eres) {
                 stderr_content = ByteArray.toString(stderr_pipe.read_bytes_finish(eres).get_data());
                 stderr_pipe.close(null);
-
                 user_cb(stdout_content, stderr_content, proc.get_exit_status());
             });
         });
@@ -138,18 +133,14 @@ function realPipeOpen(cmdline, env, callback) {
         proc = _pipedLauncher.spawnv(['bash', '-c', cmdline]);
         proc.wait_async(null, wait_cb);
     } else {
-        // Detached launcher is used to spawn commands that we are not concerned
-        // about its result.
+        // Detached launcher is used to spawn commands that we are not concerned about its result.
         let _detacLauncher = new Gio.SubprocessLauncher();
         for(let key in env) {
             _detacLauncher.setenv(key, env[key], true);
         }
         proc = _detacLauncher.spawnv(['bash', '-c', cmdline]);
     }
-
     getLogger().info("Spawned " + cmdline);
-
-    // log(`Spawning ${cmdline}`);   TODO: BEN
     return proc.get_identifier();
 }
 
@@ -170,10 +161,12 @@ function quoteShellArg(arg) {
     return "'" + arg + "'";
 }
 
-// This cache is used to reduce detector cost. Each time creating an item, it
-// check if the result of this detector is cached, which prevent the togglers
-// from running detector on each creation. This is useful especially in search
-// mode.
+/**
+ * This cache is used to reduce detector cost.
+ * Each time creating an item, it check if the result of this detector is cached, 
+ * which prevent the togglers from running detector on each creation. 
+ * This is useful especially in search mode.
+ */
 let _toggler_state_cache = { };
 
 const TogglerEntry = new Lang.Class({
@@ -227,8 +220,7 @@ const TogglerEntry = new Lang.Class({
     },
 
     compareState: function(new_state) {
-        // compare the new state with cached state
-        // notify when state is different
+        // compare the new state with cached state notify when state is different
         let old_state = _toggler_state_cache[this.detector];
         if(old_state === undefined) return;
         if(old_state == new_state) return;
