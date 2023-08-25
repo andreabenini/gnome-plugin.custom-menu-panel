@@ -16,7 +16,6 @@ const Entry = new Lang.Class({
     _init: function(prop) {
         this.type = prop.type;
         this.title = prop.title || "";
-
         this.__vars = prop.__vars || [];
         this.updateEnv(prop);
     },
@@ -27,9 +26,8 @@ const Entry = new Lang.Class({
 
     updateEnv: function(prop) {
         this.__env = {}
-        if(!this.__vars) return;
-
-        for(let i in this.__vars) {
+        if (!this.__vars) return;
+        for (let i in this.__vars) {
             let v = this.__vars[i];
             this.__env[v] = prop[v] ? String(prop[v]) : "";
         }
@@ -40,8 +38,9 @@ const Entry = new Lang.Class({
 
     _try_destroy: function() {
         try {
-            if(this.item && this.item.destroy)
+            if (this.item && this.item.destroy) {
                 this.item.destroy();
+            }
         } catch(e) { /* Ignore all errors during destory*/ }
     },
 });
@@ -50,55 +49,42 @@ const DerivedEntry = new Lang.Class({
     Name: 'DerivedEntry',
 
     _init: function(prop) {
-        if(!prop.base)
+        if (!prop.base) {
             throw new Error("Base entry not specified in type definition.");
-
+        }
         this.base = prop.base;
         this.vars = prop.vars || [];
-
         delete prop.base;
         delete prop.vars;
-
         this.prop = prop;
     },
 
     createInstance: function(addit_prop) {
         let cls = type_map[this.base];
-        if(!cls) throw new Error("Bad base class.");
-        if(cls.createInstance) throw new Error("Not allowed to derive from dervied types");
-
-        for(let rp in this.prop)
+        if (!cls) {
+            throw new Error("Bad base class.");
+        }
+        if (cls.createInstance) {
+            throw new Error("Not allowed to derive from dervied types");
+        }
+        for (let rp in this.prop) {
             addit_prop[rp] = this.prop[rp];
+        }
         addit_prop.__vars = this.vars;
-
         let instance = new cls(addit_prop);
-
         return instance;
     },
 });
 
 let __pipeOpenQueue = [];
-let __pipeExecTimer = null;
 
 /* callback: function (stdout, stderr, exit_status) { }  */
 function pipeOpen(cmdline, env, callback) {
-    let param = [cmdline, env, callback]
-    __pipeOpenQueue.push(param);
-    if(__pipeExecTimer === null) {
-        __pipeExecTimer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 50,
-            function() {
-                let param = __pipeOpenQueue.shift();
-                if (param === undefined) {
-                    __pipeExecTimer = null;
-                    return false;
-                }
-                if (realPipeOpen) {
-                    realPipeOpen(param[0], param[1], param[2]);
-                }
-                return true;
-            }
-        );
+    if (cmdline === undefined || callback === undefined) {
+        return false;
     }
+    realPipeOpen(cmdline, env, callback);
+    return true;
 } /**/
 
 function realPipeOpen(cmdline, env, callback) {
@@ -129,7 +115,7 @@ function realPipeOpen(cmdline, env, callback) {
                 Gio.SubprocessFlags.STDERR_PIPE |
                 Gio.SubprocessFlags.STDOUT_PIPE
         });
-        for(let key in env) {
+        for (let key in env) {
             _pipedLauncher.setenv(key, env[key], true);
         }
         proc = _pipedLauncher.spawnv(['bash', '-c', cmdline]);
@@ -137,7 +123,7 @@ function realPipeOpen(cmdline, env, callback) {
     } else {
         // Detached launcher is used to spawn commands that we are not concerned about its result.
         let _detacLauncher = new Gio.SubprocessLauncher();
-        for(let key in env) {
+        for (let key in env) {
             _detacLauncher.setenv(key, env[key], true);
         }
         proc = _detacLauncher.spawnv(['bash', '-c', cmdline]);
@@ -185,7 +171,6 @@ const TogglerEntry = new Lang.Class({
 
     _init: function(prop) {
         this.parent(prop);
-
         this.command_on = prop.command_on || "";
         this.command_off = prop.command_off || "";
         this.detector = prop.detector || "";
@@ -347,10 +332,8 @@ const SeparatorEntry = new Lang.Class({
 
     createItem: function() {
         this._try_destroy();
-
         this.item = new PopupMenu.PopupSeparatorMenuItem(this.title);
         this.item.label.get_clutter_text().set_use_markup(true);
-
         return this.item;
     },
 });
@@ -362,16 +345,17 @@ let type_map = {};
 
 // convert Json Nodes (GLib based) to native javascript value.
 function convertJson(node) {
-    if(node.get_node_type() == Json.NodeType.VALUE)
+    if (node.get_node_type() == Json.NodeType.VALUE) {
         return node.get_value();
-    if(node.get_node_type() == Json.NodeType.OBJECT) {
+    }
+    if (node.get_node_type() == Json.NodeType.OBJECT) {
         let obj = {}
         node.get_object().foreach_member(function(_, k, v_n) {
             obj[k] = convertJson(v_n);
         });
         return obj;
     }
-    if(node.get_node_type() == Json.NodeType.ARRAY) {
+    if (node.get_node_type() == Json.NodeType.ARRAY) {
         let arr = []
         node.get_array().foreach_element(function(_, i, elem) {
             arr.push(convertJson(elem));
@@ -383,15 +367,15 @@ function convertJson(node) {
 
 //
 function createEntry(entry_prop) {
-    if(!entry_prop.type)
+    if (!entry_prop.type) {
         throw new Error("No type specified in entry.");
-
+    }
     let cls = type_map[entry_prop.type];
-    if(!cls)
+    if (!cls) {
         throw new Error("Incorrect type '" + entry_prop.type + "'");
-    else if(cls.createInstance)
+    } else if (cls.createInstance) {
         return cls.createInstance(entry_prop);
-
+    }
     return new cls(entry_prop);
 }
 
@@ -399,8 +383,9 @@ var Loader = new Lang.Class({
     Name: 'ConfigLoader',
 
     _init: function(filename) {
-        if(filename)
+        if (filename) {
             this.loadConfig(filename);
+        }
     },
 
     loadConfig: function(filename) {
@@ -435,14 +420,15 @@ var Loader = new Lang.Class({
 
         let config_parser = new Json.Parser();
         config_parser.load_from_file(filename);
-
         let conf = convertJson(config_parser.get_root());
-        if (conf.entries == undefined)
+        if (conf.entries == undefined) {
             throw new Error("Key 'entries' not found.");
+        }
         if (conf.deftype) {
             for (let tname in conf.deftype) {
-                if (type_map[tname])
+                if (type_map[tname]) {
                     throw new Error("Type \""+tname+"\" duplicated.");
+                }
                 type_map[tname] = new DerivedEntry(conf.deftype[tname]);
             }
         }
