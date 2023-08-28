@@ -78,7 +78,7 @@ const Indicator = GObject.registerClass(
             }
         } /**/
     }
-);
+); /**/
 
 
 const Logger = new Lang.Class({
@@ -87,23 +87,28 @@ const Logger = new Lang.Class({
     _init: function(log_file) {
         this._log_file = log_file;
         // initailize log_backend
-        if(!log_file)
+        if (!log_file) {
             this._initEmptyLog();
-        else if(log_file == "gnome-shell")
+        } else if(log_file == "gnome-shell") {
             this._initGnomeLog();
-        else
+        } else {
             this._initFileLog();
-
+        }
         this.level = LOGGER_WARNING;
-
         this.info = function(t) {
-            if(this.level <= LOGGER_INFO) this.log(t)
+            if (this.level <= LOGGER_INFO) {
+                this.log(t);
+            }
         };
         this.warning = function(t) {
-            if(this.level <= LOGGER_WARNING) this.log(t)
+            if (this.level <= LOGGER_WARNING) {
+                this.log(t);
+            }
         };
         this.error = function(t) {
-            if(this.level <= LOGGER_ERROR) this.log(t);
+            if (this.level <= LOGGER_ERROR) {
+                this.log(t);
+            }
         };
     },
 
@@ -120,21 +125,15 @@ const Logger = new Lang.Class({
     _initFileLog: function() {
         this.log = function(s) {
             // all operations are synchronous: any needs to optimize?
-            if(!this._output_file || !this._output_file.query_exists(null) ||
-                !this._fstream || this._fstream.is_closed()) {
-
+            if (!this._output_file || !this._output_file.query_exists(null) || !this._fstream || this._fstream.is_closed()) {
                 this._output_file = Gio.File.new_for_path(this._log_file);
-                this._fstream = this._output_file.append_to(
-                    Gio.FileCreateFlags.NONE, null);
-
-                if(!this._fstream instanceof Gio.FileIOStream) {
+                this._fstream = this._output_file.append_to(Gio.FileCreateFlags.NONE, null);
+                if (!this._fstream instanceof Gio.FileIOStream) {
                     this._initGnomeLog();
-                    this.log("IOError: Failed to append to " + this._log_file +
-                            " [Gio.IOErrorEnum:" + this._fstream + "]");
+                    this.log("IOError: Failed to append to " + this._log_file + " [Gio.IOErrorEnum:" + this._fstream + "]");
                     return;
                 }
             }
-
             this._fstream.write(String(new Date())+" "+s+"\n", null);
             this._fstream.flush(null);
         }
@@ -142,37 +141,37 @@ const Logger = new Lang.Class({
 
     notify: function(t, str, details) {
         this.ncond = this.ncond || ['proc', 'ext', 'state'];
-        if(this.ncond.indexOf(t) < 0) return;
+        if (this.ncond.indexOf(t) < 0) {
+            return;
+        }
         Main.notify(str, details || "");
     },
-});
+}); /**/
 
 // lazy-evaluation
 let logger = null;
 function getLogger() {
-    if(logger === null)
+    if (logger === null) {
         logger = new Logger("gnome-shell");
+    }
     return logger;
-}
+} /**/
 
 class Extension {
     constructor(uuid) {
         this._uuid = uuid;
-
         ExtensionUtils.initTranslations(GETTEXT_DOMAIN);
     }
-
     enable() {
         this._indicator = new Indicator();
         Main.panel.addToStatusArea(this._uuid, this._indicator);
     }
-
     disable() {
         this._indicator.destroy();
         this._indicator = null;
     }
-}
+} /**/
 
 function init(meta) {
     return new Extension(meta.uuid);
-}
+} /**/
