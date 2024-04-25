@@ -184,7 +184,7 @@ const TogglerEntry = new Lang.Class({
         this._try_destroy();
         this.item = new PopupMenu.PopupSwitchMenuItem(this.title, false);
         this.item.label.get_clutter_text().set_use_markup(true);
-        this.item.connect('toggled', Lang.bind(this, this._onManuallyToggled));
+        this.item.connect('toggled', this._onManuallyToggled.bind(this));
         this._loadState();
         _toggleDetect(this.detector, this.__env, this);
         return this.item;
@@ -245,7 +245,7 @@ const TogglerEntry = new Lang.Class({
     },
 
     pulse: function() {
-        this._detect(Lang.bind(this, function(state) {
+        this._detect(state => {
             this.compareState(state);
             this._storeState(state);
             this._loadState();
@@ -274,7 +274,7 @@ const LauncherEntry = new Lang.Class({
         this._try_destroy();
         this.item = new PopupMenu.PopupMenuItem(this.title);
         this.item.label.get_clutter_text().set_use_markup(true);
-        this.item.connect('activate', Lang.bind(this, this._onClicked));
+        this.item.connect('activate', this._onClicked.bind(this));
         return this.item;
     },
 
