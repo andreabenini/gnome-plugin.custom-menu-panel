@@ -3,7 +3,6 @@ const GLib = imports.gi.GLib;
 const Json = imports.gi.Json;
 const Main = imports.ui.main;
 const PopupMenu = imports.ui.popupMenu;
-const ByteArray = imports.byteArray;
 
 const Me = imports.misc.extensionUtils.getCurrentExtension();
 const getLogger = Me.imports.extension.getLogger;
@@ -94,10 +93,11 @@ function realPipeOpen(cmdline, env, callback) {
 
         // Only the first GLib.MAXINT16 characters are fetched for optimization.
         stdout_pipe.read_bytes_async(GLib.MAXINT16, 0, null, function(osrc, ores) {
-            stdout_content = ByteArray.toString(stdout_pipe.read_bytes_finish(ores).get_data());
+            const decoder = new TextDecoder();
+            stdout_content = decoder.decode(stdout_pipe.read_bytes_finish(ores).get_data());
             stdout_pipe.close(null);
             stderr_pipe.read_bytes_async(GLib.MAXINT16, 0, null, function(esrc, eres) {
-                stderr_content = ByteArray.toString(stderr_pipe.read_bytes_finish(eres).get_data());
+                stderr_content = decoder.decode(stderr_pipe.read_bytes_finish(eres).get_data());
                 stderr_pipe.close(null);
                 user_cb(stdout_content, stderr_content, proc.get_exit_status());
             });
