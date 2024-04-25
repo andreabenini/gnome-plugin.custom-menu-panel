@@ -21,25 +21,21 @@
  * @see    https://github.com/andreabenini/gnome-plugin.custom-menu-panel
  */
 
-/* exported init */
-
 const GETTEXT_DOMAIN = 'custom-menu-panel';
 const CONFIGURATION_FILE = '/.entries.json';
 
-const { GObject, St } = imports.gi;
+import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
+import GObject from 'gi://GObject';
+import St from 'gi://St';
 
-const Gettext = imports.gettext.domain(GETTEXT_DOMAIN);
-const _       = Gettext.gettext;
+import {Extension, gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
-const ExtensionUtils    = imports.misc.extensionUtils;
-const GLib              = imports.gi.GLib;
-const Gio               = imports.gi.Gio;
-const Main              = imports.ui.main;
-const PanelMenu         = imports.ui.panelMenu;
-const PopupMenu         = imports.ui.popupMenu;
+import * as Main      from 'resource:///org/gnome/shell/ui/main.js';
+import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
+import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
-const Me                = imports.misc.extensionUtils.getCurrentExtension();
-const Config            = Me.imports.config
+import * as Config from './config.js';
 
 const LOGGER_INFO       = 0;
 const LOGGER_WARNING    = 1;
@@ -147,28 +143,27 @@ class Logger {
 
 // lazy-evaluation
 let logger = null;
-function getLogger() {
+export function getLogger() {
     if (logger === null) {
         logger = new Logger("gnome-shell");
     }
     return logger;
 } /**/
 
-class Extension {
-    constructor(uuid) {
-        this._uuid = uuid;
-        ExtensionUtils.initTranslations(GETTEXT_DOMAIN);
+export default class CustomMenuExtension extends Extension {
+    constructor(metadata) {
+        super(metadata);
+
+        this.initTranslations(GETTEXT_DOMAIN);
     }
+
     enable() {
         this._indicator = new Indicator();
-        Main.panel.addToStatusArea(this._uuid, this._indicator);
+        Main.panel.addToStatusArea(this.uuid, this._indicator);
     }
+
     disable() {
         this._indicator.destroy();
         this._indicator = null;
     }
-} /**/
-
-function init(meta) {
-    return new Extension(meta.uuid);
 } /**/

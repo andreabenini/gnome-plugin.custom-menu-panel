@@ -1,11 +1,11 @@
-const Gio  = imports.gi.Gio;
-const GLib = imports.gi.GLib;
-const Json = imports.gi.Json;
-const Main = imports.ui.main;
-const PopupMenu = imports.ui.popupMenu;
+import Gio  from 'gi://Gio';
+import GLib from 'gi://GLib';
+import Json from 'gi://Json';
 
-const Me = imports.misc.extensionUtils.getCurrentExtension();
-const getLogger = Me.imports.extension.getLogger;
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
+
+import {getLogger} from './extension.js';
 
 class Entry {
     constructor(prop) {
@@ -360,7 +360,7 @@ function createEntry(entry_prop) {
     return new cls(entry_prop);
 }
 
-class Loader {
+export class Loader {
     constructor(filename) {
         if (filename) {
             this.loadConfig(filename);
