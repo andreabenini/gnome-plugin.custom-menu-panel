@@ -1,7 +1,6 @@
 const Gio  = imports.gi.Gio;
 const GLib = imports.gi.GLib;
 const Json = imports.gi.Json;
-const Lang = imports.lang;
 const Main = imports.ui.main;
 const PopupMenu = imports.ui.popupMenu;
 const ByteArray = imports.byteArray;
@@ -9,46 +8,42 @@ const ByteArray = imports.byteArray;
 const Me = imports.misc.extensionUtils.getCurrentExtension();
 const getLogger = Me.imports.extension.getLogger;
 
-const Entry = new Lang.Class({
-    Name: 'Entry',
-    Abstract: true,
-
-    _init: function(prop) {
+class Entry {
+    constructor(prop) {
         this.type = prop.type;
         this.title = prop.title || "";
         this.__vars = prop.__vars || [];
         this.updateEnv(prop);
-    },
+    }
 
-    setTitle: function(text) {
+    setTitle(text) {
         this.item.label.get_clutter_text().set_text(text);
-    },
+    }
 
-    updateEnv: function(prop) {
+    updateEnv(prop) {
         this.__env = {}
         if (!this.__vars) return;
         for (let i in this.__vars) {
             let v = this.__vars[i];
             this.__env[v] = prop[v] ? String(prop[v]) : "";
         }
-    },
+    }
 
     // the pulse function should be read as "a pulse arrives"
-    pulse: function() { },
+    pulse() {
+    }
 
-    _try_destroy: function() {
+    _try_destroy() {
         try {
             if (this.item && this.item.destroy) {
                 this.item.destroy();
             }
         } catch(e) { /* Ignore all errors during destory*/ }
-    },
-});
+    }
+}
 
-const DerivedEntry = new Lang.Class({
-    Name: 'DerivedEntry',
-
-    _init: function(prop) {
+class DerivedEntry {
+    constructor(prop) {
         if (!prop.base) {
             throw new Error("Base entry not specified in type definition.");
         }
@@ -57,9 +52,9 @@ const DerivedEntry = new Lang.Class({
         delete prop.base;
         delete prop.vars;
         this.prop = prop;
-    },
+    }
 
-    createInstance: function(addit_prop) {
+    createInstance(addit_prop) {
         let cls = type_map[this.base];
         if (!cls) {
             throw new Error("Bad base class.");
@@ -73,8 +68,8 @@ const DerivedEntry = new Lang.Class({
         addit_prop.__vars = this.vars;
         let instance = new cls(addit_prop);
         return instance;
-    },
-});
+    }
+}
 
 let __pipeOpenQueue = [];
 
@@ -165,12 +160,9 @@ function quoteShellArg(arg) {
  */
 let _toggler_state_cache = { };
 
-const TogglerEntry = new Lang.Class({
-    Name: 'TogglerEntry',
-    Extends: Entry,
-
-    _init: function(prop) {
-        this.parent(prop);
+class TogglerEntry extends Entry {
+    constructor(prop) {
+        super(prop);
         this.command_on = prop.command_on || "";
         this.command_off = prop.command_off || "";
         this.detector = prop.detector || "";
@@ -178,9 +170,9 @@ const TogglerEntry = new Lang.Class({
         this.notify_when = prop.notify_when || [];
         // if the switch is manually turned off, auto_on is disabled.
         this._manually_switched_off = false;
-    },
+    }
 
-    createItem: function() {
+    createItem() {
         this._try_destroy();
         this.item = new PopupMenu.PopupSwitchMenuItem(this.title, false);
         this.item.label.get_clutter_text().set_use_markup(true);
@@ -188,24 +180,24 @@ const TogglerEntry = new Lang.Class({
         this._loadState();
         _toggleDetect(this.detector, this.__env, this);
         return this.item;
-    },
+    }
 
-    _onManuallyToggled: function(_, state) {
+    _onManuallyToggled(_, state) {
         // when switched on again, this flag will get cleared.
         this._manually_switched_off = !state;
         this._storeState(state);
         this._onToggled(state);
-    },
+    }
 
-    _onToggled: function(state) {
+    _onToggled(state) {
         if (state) {
             _generalSpawn(this.command_on, this.__env, this.title);
         } else {
             _generalSpawn(this.command_off, this.__env, this.title);
         }
-    },
+    }
 
-    _detect: function(callback) {
+    _detect(callback) {
         // abort detecting if detector is an empty string
         if (!this.detector) {
             return;
@@ -214,10 +206,10 @@ const TogglerEntry = new Lang.Class({
             out = String(out);
             callback(!Boolean(out.match(/^\s*$/)));
         });
-    },
+    }
 
     // compare the new state with cached state notify when state is different
-    compareState: function(new_state) {
+    compareState(new_state) {
         let old_state = _toggler_state_cache[this.detector];
         if (old_state === undefined) return;
         if (old_state == new_state)  return;
@@ -229,22 +221,22 @@ const TogglerEntry = new Lang.Class({
             }
             getLogger().notify("state", not_str);
         }
-    },
+    }
 
-    _storeState: function(state) {
+    _storeState(state) {
         let hash = JSON.stringify({ env: this.__env, detector: this.detector });
         _toggler_state_cache[hash] = state;
-    },
+    }
 
-    _loadState: function() {
+    _loadState() {
         let hash = JSON.stringify({ env: this.__env, detector: this.detector });
         let state = _toggler_state_cache[hash];
         if (state !== undefined) {
             this.item.setToggleState(state);            // doesn't emit 'toggled'
         }
-    },
+    }
 
-    pulse: function() {
+    pulse() {
         this._detect(state => {
             this.compareState(state);
             this._storeState(state);
@@ -253,46 +245,40 @@ const TogglerEntry = new Lang.Class({
                 // do not call setToggleState here, because command_on may fail
                 this._onToggled(this.item, true);
             }
-        }));
-    },
+        });
+    }
 
-    perform: function() {
+    perform() {
         this.item.toggle();
-    },
-});
+    }
+}
 
-const LauncherEntry = new Lang.Class({
-    Name: 'LauncherEntry',
-    Extends: Entry,
-
-    _init: function(prop) {
-        this.parent(prop);
+class LauncherEntry extends Entry {
+    constructor(prop) {
+        super(prop);
         this.command = prop.command || "";
-    },
+    }
 
-    createItem: function() {
+    createItem() {
         this._try_destroy();
         this.item = new PopupMenu.PopupMenuItem(this.title);
         this.item.label.get_clutter_text().set_use_markup(true);
         this.item.connect('activate', this._onClicked.bind(this));
         return this.item;
-    },
+    }
 
-    _onClicked: function(_) {
+    _onClicked(_) {
         _generalSpawn(this.command, this.__env, this.title);
-    },
+    }
 
-    perform: function() {
+    perform() {
         this.item.emit('activate');
-    },
-});
+    }
+}
 
-const SubMenuEntry = new Lang.Class({
-    Name: 'SubMenuEntry',
-    Extends: Entry,
-
-    _init: function(prop) {
-        this.parent(prop)
+class SubMenuEntry extends Entry {
+    constructor(prop) {
+        super(prop);
 
         if (prop.entries == undefined) {
             throw new Error("Expected entries provided in submenu entry.");
@@ -303,9 +289,9 @@ const SubMenuEntry = new Lang.Class({
             let entry = createEntry(entry_prop);
             this.entries.push(entry);
         }
-    },
+    }
 
-    createItem: function() {
+    createItem() {
         this._try_destroy();
         this.item = new PopupMenu.PopupSubMenuMenuItem(this.title);
         this.item.label.get_clutter_text().set_use_markup(true);
@@ -314,29 +300,24 @@ const SubMenuEntry = new Lang.Class({
             this.item.menu.addMenuItem(entry.createItem());
         }
         return this.item;
-    },
+    }
 
-    pulse: function() {
+    pulse() {
         for (let i in this.entries) {
             let entry = this.entries[i];
             entry.pulse();
         }
     }
-});
+}
 
-const SeparatorEntry = new Lang.Class({
-    Name: 'SeparatorEntry',
-    Extends: Entry,
-
-    _init: function(prop) { },
-
-    createItem: function() {
+class SeparatorEntry extends Entry {
+    createItem() {
         this._try_destroy();
         this.item = new PopupMenu.PopupSeparatorMenuItem(this.title);
         this.item.label.get_clutter_text().set_use_markup(true);
         return this.item;
-    },
-});
+    }
+}
 
 let type_map = {};
 
@@ -379,16 +360,14 @@ function createEntry(entry_prop) {
     return new cls(entry_prop);
 }
 
-var Loader = new Lang.Class({
-    Name: 'ConfigLoader',
-
-    _init: function(filename) {
+class Loader {
+    constructor(filename) {
         if (filename) {
             this.loadConfig(filename);
         }
-    },
+    }
 
-    loadConfig: function(filename) {
+    loadConfig(filename) {
         // reset type_map everytime load the config
         type_map = {
             launcher: LauncherEntry,
@@ -437,10 +416,9 @@ var Loader = new Lang.Class({
             let entry_prop = conf.entries[conf_i];
             this.entries.push(createEntry(entry_prop));
         }
-    },
+    }
 
-
-    saveDefaultConfig: function(filename) {
+    saveDefaultConfig(filename) {
         // Write default config
         const PERMISSIONS_MODE = 0o640;
         const jsonString = JSON.stringify({
@@ -462,6 +440,5 @@ var Loader = new Lang.Class({
         } catch(e) {
             Main.notify(_('Cannot create and load file: '+filename));
         }
-    }, /**/
-
-});
+    }
+}

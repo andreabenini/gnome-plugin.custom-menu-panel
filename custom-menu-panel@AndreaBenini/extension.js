@@ -32,7 +32,6 @@ const Gettext = imports.gettext.domain(GETTEXT_DOMAIN);
 const _       = Gettext.gettext;
 
 const ExtensionUtils    = imports.misc.extensionUtils;
-const Lang              = imports.lang;
 const GLib              = imports.gi.GLib;
 const Gio               = imports.gi.Gio;
 const Main              = imports.ui.main;
@@ -81,10 +80,8 @@ const Indicator = GObject.registerClass(
 ); /**/
 
 
-const Logger = new Lang.Class({
-    Name: 'Logger',
-
-    _init: function(log_file) {
+class Logger {
+    constructor(log_file) {
         this._log_file = log_file;
         // initailize log_backend
         if (!log_file) {
@@ -110,19 +107,19 @@ const Logger = new Lang.Class({
                 this.log(t);
             }
         };
-    },
+    }
 
-    _initEmptyLog: function() {
+    _initEmptyLog() {
         this.log = function(_) { };
-    },
+    }
 
-    _initGnomeLog: function() {
+    _initGnomeLog() {
         this.log = function(s) {
             global.log("custom-menu-panel> " + s);
         };
-    },
+    }
 
-    _initFileLog: function() {
+    _initFileLog() {
         this.log = function(s) {
             // all operations are synchronous: any needs to optimize?
             if (!this._output_file || !this._output_file.query_exists(null) || !this._fstream || this._fstream.is_closed()) {
@@ -137,16 +134,16 @@ const Logger = new Lang.Class({
             this._fstream.write(String(new Date())+" "+s+"\n", null);
             this._fstream.flush(null);
         }
-    },
+    }
 
-    notify: function(t, str, details) {
+    notify(t, str, details) {
         this.ncond = this.ncond || ['proc', 'ext', 'state'];
         if (this.ncond.indexOf(t) < 0) {
             return;
         }
         Main.notify(str, details || "");
-    },
-}); /**/
+    }
+}
 
 // lazy-evaluation
 let logger = null;
