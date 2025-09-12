@@ -1,6 +1,12 @@
-2025-09 v4.2.2
-        - FIX:    Code evaluation and major rewrite, this plugin has lost its pace and it's quite outdated for
-               current gnome versions. Adapting sources to match new Gnome 48 structures and data types
+2025-09 v5.0.0
+        - MAJOR:  Complete rewrite for GNOME 40+ compatibility
+        - FIX:    Migrated from deprecated 'imports' system to ES6 modules
+        - FIX:    Updated to modern GNOME Shell Extension API
+        - FIX:    Replaced deprecated ByteArray.toString() with TextDecoder
+        - FIX:    Updated logging to use console.log instead of global.log
+        - FIX:    Resolved circular import dependencies
+        - UPDATE: Support for GNOME versions 40-48
+        - UPDATE: Better error handling and modern JavaScript patterns
 
 2023-08 v4.2.1
         - FIX: Status toggler widget wasn't checked on startup, now this item uses 'detector' property for it.
