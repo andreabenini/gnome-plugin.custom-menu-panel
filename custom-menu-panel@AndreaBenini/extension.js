@@ -22,30 +22,23 @@
  */
 
 /* exported init */
+import GObject from 'gi://GObject';
+import St from 'gi://St';
+import GLib from 'gi://GLib';
+import Gio from 'gi://Gio';
+
+import {Extension, gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
+
+import * as Config from './config.js';
 
 const GETTEXT_DOMAIN = 'custom-menu-panel';
 const CONFIGURATION_FILE = '/.entries.json';
 
-const { GObject, St } = imports.gi;
-
-const Gettext = imports.gettext.domain(GETTEXT_DOMAIN);
-const _       = Gettext.gettext;
-
-const ExtensionUtils    = imports.misc.extensionUtils;
-const Lang              = imports.lang;
-const GLib              = imports.gi.GLib;
-const Gio               = imports.gi.Gio;
-const Main              = imports.ui.main;
-const PanelMenu         = imports.ui.panelMenu;
-const PopupMenu         = imports.ui.popupMenu;
-
-const Me                = imports.misc.extensionUtils.getCurrentExtension();
-const Config            = Me.imports.config
-
-const LOGGER_INFO       = 0;
-const LOGGER_WARNING    = 1;
-const LOGGER_ERROR      = 2;
-
+const LOGGER_INFO = 0;
+const LOGGER_WARNING = 1;
+const LOGGER_ERROR = 2;
 
 const Indicator = GObject.registerClass(
     class Indicator extends PanelMenu.Button {
@@ -55,20 +48,20 @@ const Indicator = GObject.registerClass(
                 icon_name: 'view-list-bullet-symbolic',
                 style_class: 'system-status-icon',
             }));
-            this._loadSetup();
-        }
+            this.loadSetup();
+        } /**/
 
         /**
          * LOAD Program settings from .entries.json file
          */
-        _loadSetup() {
+        loadSetup() {
             this.menu.removeAll();
             // Loading configuration from file
-            this.configLoader = new Config.Loader();
+            this.configLoader = new Config.Loader(GLib.get_home_dir() + CONFIGURATION_FILE, this);
             try {
-                this.configLoader.loadConfig(GLib.get_home_dir() + CONFIGURATION_FILE);         // $HOME/.entries.json
+                this.configLoader.loadConfig();                                 // $HOME/.entries.json
             } catch(e) {
-                this.configLoader.saveDefaultConfig(GLib.get_home_dir() + CONFIGURATION_FILE);  // create default entries
+                this.configLoader.saveDefaultConfig();                          // create default entries
             }
             // Build the menu
             let i = 0;
@@ -78,100 +71,23 @@ const Indicator = GObject.registerClass(
             }
         } /**/
     }
-); /**/
+);
 
-
-const Logger = new Lang.Class({
-    Name: 'Logger',
-
-    _init: function(log_file) {
-        this._log_file = log_file;
-        // initailize log_backend
-        if (!log_file) {
-            this._initEmptyLog();
-        } else if(log_file == "gnome-shell") {
-            this._initGnomeLog();
-        } else {
-            this._initFileLog();
-        }
-        this.level = LOGGER_WARNING;
-        this.info = function(t) {
-            if (this.level <= LOGGER_INFO) {
-                this.log(t);
-            }
-        };
-        this.warning = function(t) {
-            if (this.level <= LOGGER_WARNING) {
-                this.log(t);
-            }
-        };
-        this.error = function(t) {
-            if (this.level <= LOGGER_ERROR) {
-                this.log(t);
-            }
-        };
-    },
-
-    _initEmptyLog: function() {
-        this.log = function(_) { };
-    },
-
-    _initGnomeLog: function() {
-        this.log = function(s) {
-            global.log("custom-menu-panel> " + s);
-        };
-    },
-
-    _initFileLog: function() {
-        this.log = function(s) {
-            // all operations are synchronous: any needs to optimize?
-            if (!this._output_file || !this._output_file.query_exists(null) || !this._fstream || this._fstream.is_closed()) {
-                this._output_file = Gio.File.new_for_path(this._log_file);
-                this._fstream = this._output_file.append_to(Gio.FileCreateFlags.NONE, null);
-                if (!this._fstream instanceof Gio.FileIOStream) {
-                    this._initGnomeLog();
-                    this.log("IOError: Failed to append to " + this._log_file + " [Gio.IOErrorEnum:" + this._fstream + "]");
-                    return;
-                }
-            }
-            this._fstream.write(String(new Date())+" "+s+"\n", null);
-            this._fstream.flush(null);
-        }
-    },
-
-    notify: function(t, str, details) {
-        this.ncond = this.ncond || ['proc', 'ext', 'state'];
-        if (this.ncond.indexOf(t) < 0) {
-            return;
-        }
-        Main.notify(str, details || "");
-    },
-}); /**/
-
-// lazy-evaluation
-let logger = null;
-function getLogger() {
-    if (logger === null) {
-        logger = new Logger("gnome-shell");
+export default class CustomMenuPanelExtension extends Extension {
+    constructor(metadata) {
+        super(metadata);
+        this._uuid = metadata.uuid;
     }
-    return logger;
-} /**/
-
-class Extension {
-    constructor(uuid) {
-        this._uuid = uuid;
-        ExtensionUtils.initTranslations(GETTEXT_DOMAIN);
-    }
+    
     enable() {
         this._indicator = new Indicator();
         Main.panel.addToStatusArea(this._uuid, this._indicator);
-    }
-    disable() {
-        this._indicator.destroy();
-        this._indicator = null;
-    }
-} /**/
+    } /**/
 
-function init(meta) {
-    return new Extension(meta.uuid);
-} /**/
+    disable() {
+        if (this._indicator) {
+            this._indicator.destroy();
+            this._indicator = null;
+        }
+    } /**/
+}
