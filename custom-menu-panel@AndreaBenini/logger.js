@@ -68,6 +68,16 @@ const Logger = class Logger {
         }
         Main.notify(str, details || "");
     }
+
+    // Class destructor
+    destroy() {
+        if (this._fstream && !this._fstream.is_closed()) {
+            this._fstream.close(null);
+            this._fstream = null;
+        }
+        this._output_file = null;
+    }
+
 };
 
 // lazy-evaluation
@@ -77,4 +87,12 @@ export function getLogger() {
         logger = new Logger("gnome-shell");
     }
     return logger;
+}
+
+// class destructor
+export function destroyLogger() {
+    if (logger !== null) {
+        logger.destroy();
+        logger = null;
+    }
 }
