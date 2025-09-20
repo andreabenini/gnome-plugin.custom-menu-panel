@@ -32,6 +32,7 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 
 import * as Config from './config.js';
+import * as Logger from './logger.js';
 
 const GETTEXT_DOMAIN = 'custom-menu-panel';
 const CONFIGURATION_FILE = '/.entries.json';
@@ -89,5 +90,6 @@ export default class CustomMenuPanelExtension extends Extension {
             this._indicator.destroy();
             this._indicator = null;
         }
+        Logger.destroyLogger();
     } /**/
 }
