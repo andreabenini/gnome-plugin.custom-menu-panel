@@ -1,3 +1,17 @@
+2025-09 v5.0.1
+        - MAJOR:  Project registered and available for download from https://extensions.gnome.org,
+                  search "custom menu" in the gnome extensions marketplace, it will come out as the
+                  FIRST result. Just install it from official Gnome Extensions website.
+        - FIX:    Removing incompatible gnome versions according to new gnome base classes. Fixed
+                  metadata.json manifest file to properly match what latest Gnome versions require
+        - FIX:    Garbage collector and automated tests. When the extension is disabled it won't waste
+                  memory and no js stale variables around. Minimal footprint without gnome registry
+                  presence, configuration is totally self contained in the entries.json file
+        - ADD:    Adding new object types:
+                        - 'systemd': for managing systemd services
+                        - 'tmux': for dealing with tmux sessions
+                  Documentation updated in the README.md file
+
 2025-09 v5.0.0
         - MAJOR:  Complete rewrite for GNOME 40+ compatibility
         - FIX:    Migrated from deprecated 'imports' system to ES6 modules
