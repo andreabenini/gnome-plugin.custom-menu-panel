@@ -13,6 +13,17 @@
       "detector":    "$HOME/bin/audio.switch status|grep speaker >/dev/null && echo yes"
     },
     {
+        "type": "systemd",
+        "title": "Print Service",
+        "unit": "cups"
+    },
+    {
+        "type": "tmux",
+        "title": "Ben's TMUX Session",
+        "session": "ben",
+        "command": "bash"
+    },
+    {
       "type": "separator"
     },
     {
@@ -39,7 +50,7 @@
     {
       "type": "launcher",
       "title": "Stream CAM ",
-      "command": "/usr/bin/ffplay -x 640 -y 360 rtsp://192.168.0.x:5555/MyCamUnicast"
+      "command": "ffplay -x 640 -y 360 -rtsp_transport tcp -flags nobuffer -flags low_delay -window_title 'Window Title' rtsp://192.168.0.x:5555/MyCamUnicastURI >/dev/null && 2>&1"
     },
     {
       "type": "launcher",
