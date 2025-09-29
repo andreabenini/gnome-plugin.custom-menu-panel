@@ -13,6 +13,13 @@
       "detector":    "$HOME/bin/audio.switch status|grep speaker >/dev/null && echo yes"
     },
     {
+        "type": "toggler",
+        "title": "Alternative pipewire based audio switcher method",
+        "command_on":  "wpctl set-default $(wpctl status | grep 'USB Audio Device Analog Stereo' | sed 's/^[^0-9]*\\([0-9]\\+\\).*/\\1/')",
+        "command_off": "wpctl set-default $(wpctl status | grep 'Headphones' | sed 's/^[^0-9]*\\([0-9]\\+\\).*/\\1/')",
+        "detector": "wpctl status | grep 'Sinks:' -A 10 | grep -E '\\*.*USB Audio Device Analog Stereo'"
+    },
+    {
         "type": "systemd",
         "title": "Print Service",
         "unit": "cups"
