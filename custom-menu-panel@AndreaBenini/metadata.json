@@ -1,10 +1,15 @@
 {
+  "_generated": "_",
   "description": "Quick custom menu for launching your favorite applications",
   "name": "custom-menu-panel",
   "shell-version": [
-    "45", "46", "47", "48", "49"
+    "45",
+    "46",
+    "47",
+    "48",
+    "49"
   ],
   "url": "https://github.com/andreabenini/gnome-plugin.custom-menu-panel",
   "uuid": "custom-menu-panel@AndreaBenini",
-  "version": 5
+  "version": 6
 }
