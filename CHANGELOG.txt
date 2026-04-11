@@ -1,3 +1,6 @@
+2026-04 v5.0.2
+        - UPDATE: Support for GNOME version 50, plugin was already ported to the new architecture
+                  and major upgrade to 50 seems to be just a matter of updating metadata files
 2025-09 v5.0.1
         - MAJOR:  Project registered and available for download from https://extensions.gnome.org,
                   search "custom menu" in the gnome extensions marketplace, it will come out as the
