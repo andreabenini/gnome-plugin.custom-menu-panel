@@ -1,5 +1,6 @@
 # Gnome Custom Menu Panel
 Custom menu on Gnome Top Bar with your favorite program shortcuts.
+Adding support to newer 50 series
 
 ![Screenshot Preview](screenshot.png)
 ![another Preview](widget.png)
@@ -128,3 +129,4 @@ pull request. You can also simply open an issue and write your notes there.
 
 Don't forget to give the project a star!  
 Thanks again!
+
