@@ -1,54 +1,47 @@
-const Gio  = imports.gi.Gio;
-const GLib = imports.gi.GLib;
-const Json = imports.gi.Json;
-const Lang = imports.lang;
-const Main = imports.ui.main;
-const PopupMenu = imports.ui.popupMenu;
-const ByteArray = imports.byteArray;
+import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
+import Json from 'gi://Json';
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
-const Me = imports.misc.extensionUtils.getCurrentExtension();
-const getLogger = Me.imports.extension.getLogger;
+import {Extension, gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
+import {getLogger} from './logger.js';
 
-const Entry = new Lang.Class({
-    Name: 'Entry',
-    Abstract: true,
-
-    _init: function(prop) {
+const Entry = class Entry {
+    constructor(prop) {
         this.type = prop.type;
         this.title = prop.title || "";
         this.__vars = prop.__vars || [];
         this.updateEnv(prop);
-    },
+    }
 
-    setTitle: function(text) {
+    setTitle(text) {
         this.item.label.get_clutter_text().set_text(text);
-    },
+    }
 
-    updateEnv: function(prop) {
+    updateEnv(prop) {
         this.__env = {}
         if (!this.__vars) return;
         for (let i in this.__vars) {
             let v = this.__vars[i];
             this.__env[v] = prop[v] ? String(prop[v]) : "";
         }
-    },
+    }
 
     // the pulse function should be read as "a pulse arrives"
-    pulse: function() { },
+    pulse() { }
 
-    _try_destroy: function() {
+    _try_destroy() {
         try {
             if (this.item && this.item.destroy) {
                 this.item.destroy();
             }
         } catch(e) { /* Ignore all errors during destory*/ }
-    },
-});
+    }
+}; /**/
 
-const DerivedEntry = new Lang.Class({
-    Name: 'DerivedEntry',
-
-    _init: function(prop) {
+const DerivedEntry = class DerivedEntry {
+    constructor(prop) {
         if (!prop.base) {
             throw new Error("Base entry not specified in type definition.");
         }
@@ -57,9 +50,9 @@ const DerivedEntry = new Lang.Class({
         delete prop.base;
         delete prop.vars;
         this.prop = prop;
-    },
+    }
 
-    createInstance: function(addit_prop) {
+    createInstance(addit_prop) {
         let cls = type_map[this.base];
         if (!cls) {
             throw new Error("Bad base class.");
@@ -73,8 +66,8 @@ const DerivedEntry = new Lang.Class({
         addit_prop.__vars = this.vars;
         let instance = new cls(addit_prop);
         return instance;
-    },
-});
+    }
+}; /**/
 
 let __pipeOpenQueue = [];
 
@@ -85,7 +78,7 @@ function pipeOpen(cmdline, env, callback) {
     }
     realPipeOpen(cmdline, env, callback);
     return true;
-} /**/
+}; /**/
 
 function realPipeOpen(cmdline, env, callback) {
     let user_cb = callback;
@@ -99,16 +92,17 @@ function realPipeOpen(cmdline, env, callback) {
 
         // Only the first GLib.MAXINT16 characters are fetched for optimization.
         stdout_pipe.read_bytes_async(GLib.MAXINT16, 0, null, function(osrc, ores) {
-            stdout_content = ByteArray.toString(stdout_pipe.read_bytes_finish(ores).get_data());
+            const stdout_bytes = stdout_pipe.read_bytes_finish(ores);
+            stdout_content = new TextDecoder().decode(stdout_bytes.get_data());
             stdout_pipe.close(null);
             stderr_pipe.read_bytes_async(GLib.MAXINT16, 0, null, function(esrc, eres) {
-                stderr_content = ByteArray.toString(stderr_pipe.read_bytes_finish(eres).get_data());
+                const stderr_bytes = stderr_pipe.read_bytes_finish(eres);
+                stderr_content = new TextDecoder().decode(stderr_bytes.get_data());
                 stderr_pipe.close(null);
                 user_cb(stdout_content, stderr_content, proc.get_exit_status());
             });
         });
     }
-
     if (user_cb) {
         let _pipedLauncher = new Gio.SubprocessLauncher({
             flags:
@@ -130,32 +124,30 @@ function realPipeOpen(cmdline, env, callback) {
     }
     getLogger().info("Spawned " + cmdline);
     return proc.get_identifier();
-}
+}; /**/
 
 function _generalSpawn(command, env, title) {
     title = title || "Process";
     pipeOpen(command, env, function(stdout, stderr, exit_status) {
         if (exit_status != 0) {
-            log
             getLogger().warning(stderr);
             getLogger().notify("proc", title + " exited with status " + exit_status, stderr);
         }
     });
-}
+}; /**/
 
 // Detect menu toggle on startup
 function _toggleDetect(command, env, object) {
     pipeOpen(command, env, function(stdout, stderr, exit_status) {
-        if (exit_status == 0) {
+        let isToggleActive = (exit_status == 0);
+        if (isToggleActive) {
             object.item.setToggleState(true);
+        } else {                        // Do NOT execute any action for a toggler initialized as FALSE (just finishing the object init)
+            object._initialized = true;
         }
     });
-} /**/
+}; /**/
 
-function quoteShellArg(arg) {
-    arg = arg.replace(/'/g, "'\"'\"'");
-    return "'" + arg + "'";
-}
 
 /**
  * This cache is used to reduce detector cost.
@@ -165,12 +157,10 @@ function quoteShellArg(arg) {
  */
 let _toggler_state_cache = { };
 
-const TogglerEntry = new Lang.Class({
-    Name: 'TogglerEntry',
-    Extends: Entry,
 
-    _init: function(prop) {
-        this.parent(prop);
+const TogglerEntry = class TogglerEntry extends Entry {
+    constructor(prop) {
+        super(prop);
         this.command_on = prop.command_on || "";
         this.command_off = prop.command_off || "";
         this.detector = prop.detector || "";
@@ -178,34 +168,42 @@ const TogglerEntry = new Lang.Class({
         this.notify_when = prop.notify_when || [];
         // if the switch is manually turned off, auto_on is disabled.
         this._manually_switched_off = false;
-    },
+        this._initialized = true;
+    }
 
-    createItem: function() {
+    createItem() {
         this._try_destroy();
         this.item = new PopupMenu.PopupSwitchMenuItem(this.title, false);
         this.item.label.get_clutter_text().set_use_markup(true);
-        this.item.connect('toggled', Lang.bind(this, this._onManuallyToggled));
+        this.item.connect('toggled', this._onManuallyToggled.bind(this));
         this._loadState();
+        this._initialized = false;
         _toggleDetect(this.detector, this.__env, this);
         return this.item;
-    },
+    }
 
-    _onManuallyToggled: function(_, state) {
+    _onManuallyToggled(_, state) {
+        // Skip toggling during initialization execution
+        if (!this._initialized) {
+            this._initialized = true;
+            this._storeState(state);
+            return;
+        }
         // when switched on again, this flag will get cleared.
         this._manually_switched_off = !state;
         this._storeState(state);
         this._onToggled(state);
-    },
+    }
 
-    _onToggled: function(state) {
+    _onToggled(state) {
         if (state) {
             _generalSpawn(this.command_on, this.__env, this.title);
         } else {
             _generalSpawn(this.command_off, this.__env, this.title);
         }
-    },
+    }
 
-    _detect: function(callback) {
+    _detect(callback) {
         // abort detecting if detector is an empty string
         if (!this.detector) {
             return;
@@ -214,10 +212,10 @@ const TogglerEntry = new Lang.Class({
             out = String(out);
             callback(!Boolean(out.match(/^\s*$/)));
         });
-    },
+    }
 
     // compare the new state with cached state notify when state is different
-    compareState: function(new_state) {
+    compareState(new_state) {
         let old_state = _toggler_state_cache[this.detector];
         if (old_state === undefined) return;
         if (old_state == new_state)  return;
@@ -229,23 +227,23 @@ const TogglerEntry = new Lang.Class({
             }
             getLogger().notify("state", not_str);
         }
-    },
+    }
 
-    _storeState: function(state) {
+    _storeState(state) {
         let hash = JSON.stringify({ env: this.__env, detector: this.detector });
         _toggler_state_cache[hash] = state;
-    },
+    }
 
-    _loadState: function() {
+    _loadState() {
         let hash = JSON.stringify({ env: this.__env, detector: this.detector });
         let state = _toggler_state_cache[hash];
         if (state !== undefined) {
             this.item.setToggleState(state);            // doesn't emit 'toggled'
         }
-    },
+    }
 
-    pulse: function() {
-        this._detect(Lang.bind(this, function(state) {
+    pulse() {
+        this._detect((state) => {
             this.compareState(state);
             this._storeState(state);
             this._loadState();
@@ -253,46 +251,68 @@ const TogglerEntry = new Lang.Class({
                 // do not call setToggleState here, because command_on may fail
                 this._onToggled(this.item, true);
             }
-        }));
-    },
+        });
+    }
 
-    perform: function() {
+    perform() {
         this.item.toggle();
-    },
-});
+    }
+}; /**/
 
-const LauncherEntry = new Lang.Class({
-    Name: 'LauncherEntry',
-    Extends: Entry,
-
-    _init: function(prop) {
-        this.parent(prop);
+const LauncherEntry = class LauncherEntry extends Entry {
+    constructor(prop) {
+        super(prop);
         this.command = prop.command || "";
-    },
+    }
 
-    createItem: function() {
+    createItem() {
         this._try_destroy();
         this.item = new PopupMenu.PopupMenuItem(this.title);
         this.item.label.get_clutter_text().set_use_markup(true);
-        this.item.connect('activate', Lang.bind(this, this._onClicked));
+        this.item.connect('activate', this._onClicked.bind(this));
         return this.item;
-    },
+    }
 
-    _onClicked: function(_) {
+    _onClicked(_) {
         _generalSpawn(this.command, this.__env, this.title);
-    },
+    }
 
-    perform: function() {
+    perform() {
         this.item.emit('activate');
-    },
-});
+    }
+}; /**/
 
-const SubMenuEntry = new Lang.Class({
-    Name: 'SubMenuEntry',
-    Extends: Entry,
+const ReloadEntry = class ReloadEntry extends Entry {
+    constructor(prop, indicator) {
+        super(prop);
+        this.command   = prop.command || "";
+        this.indicator = indicator;
+    }
 
-    _init: function(prop) {
-        this.parent(prop)
+    createItem() {
+        this._try_destroy();
+        this.item = new PopupMenu.PopupMenuItem(this.title);
+        this.item.label.get_clutter_text().set_use_markup(true);
+        this.item.connect('activate', this._onClicked.bind(this));
+        return this.item;
+    }
+    
+    _onClicked(_) {
+        if (this.indicator && typeof this.indicator.loadSetup === 'function') {
+            this.indicator.loadSetup();
+            log('custom-menu-panel: Configuration reloaded');
+        }
+    }
+
+    perform() {
+        this.item.emit('activate');
+    }
+}; /**/
+
+const SubMenuEntry = class SubMenuEntry extends Entry {
+    constructor(prop, indicator) {
+        super(prop);
+        this.indicator = indicator;
 
         if (prop.entries == undefined) {
             throw new Error("Expected entries provided in submenu entry.");
@@ -300,12 +320,12 @@ const SubMenuEntry = new Lang.Class({
         this.entries = [];
         for (let i in prop.entries) {
             let entry_prop = prop.entries[i];
-            let entry = createEntry(entry_prop);
+            let entry = createEntry(entry_prop, indicator);
             this.entries.push(entry);
         }
-    },
+    }
 
-    createItem: function() {
+    createItem() {
         this._try_destroy();
         this.item = new PopupMenu.PopupSubMenuMenuItem(this.title);
         this.item.label.get_clutter_text().set_use_markup(true);
@@ -314,29 +334,28 @@ const SubMenuEntry = new Lang.Class({
             this.item.menu.addMenuItem(entry.createItem());
         }
         return this.item;
-    },
+    }
 
-    pulse: function() {
+    pulse() {
         for (let i in this.entries) {
             let entry = this.entries[i];
             entry.pulse();
         }
     }
-});
+}; /**/
 
-const SeparatorEntry = new Lang.Class({
-    Name: 'SeparatorEntry',
-    Extends: Entry,
+const SeparatorEntry = class SeparatorEntry extends Entry {
+    constructor(prop) {
+        super(prop);
+    }
 
-    _init: function(prop) { },
-
-    createItem: function() {
+    createItem() {
         this._try_destroy();
         this.item = new PopupMenu.PopupSeparatorMenuItem(this.title);
         this.item.label.get_clutter_text().set_use_markup(true);
         return this.item;
-    },
-});
+    }
+}; /**/
 
 let type_map = {};
 
@@ -363,10 +382,10 @@ function convertJson(node) {
         return arr;
     }
     return null;
-}
+}; /**/
 
-//
-function createEntry(entry_prop) {
+// Instantiate a generic menu item inside [indicator]
+function createEntry(entry_prop, indicator) {
     if (!entry_prop.type) {
         throw new Error("No type specified in entry.");
     }
@@ -374,37 +393,36 @@ function createEntry(entry_prop) {
     if (!cls) {
         throw new Error("Incorrect type '" + entry_prop.type + "'");
     } else if (cls.createInstance) {
-        return cls.createInstance(entry_prop);
+        return cls.createInstance(entry_prop, indicator);
     }
-    return new cls(entry_prop);
-}
+    return new cls(entry_prop, indicator);
+}; /**/
 
-var Loader = new Lang.Class({
-    Name: 'ConfigLoader',
 
-    _init: function(filename) {
-        if (filename) {
-            this.loadConfig(filename);
-        }
-    },
+export const Loader = class Loader {
+    constructor(filename, menu) {
+        this._configurationFilename = filename;
+        this._menu = menu;
+    } /**/
 
-    loadConfig: function(filename) {
-        // reset type_map everytime load the config
+    // Reset type_map everytime and load the config
+    loadConfig() {
         type_map = {
             launcher: LauncherEntry,
+            reload: ReloadEntry,
             toggler: TogglerEntry,
             submenu: SubMenuEntry,
             separator: SeparatorEntry
         };
 
+        // New widgets inherited as DerivedEntry() from [type_map]
         type_map.systemd = new DerivedEntry({
             base: 'toggler',
             vars: ['unit'],
             command_on: "pkexec systemctl start ${unit}",
             command_off: "pkexec systemctl stop ${unit}",
-            detector: "systemctl status ${unit} | grep Active:\\\\s\\*activ[ei]",
+            detector: "systemctl status ${unit} | grep 'Active:\\sactiv'",
         });
-
         type_map.tmux = new DerivedEntry({
             base: 'toggler',
             vars: ['command', 'session'],
@@ -413,13 +431,13 @@ var Loader = new Lang.Class({
             detector: 'tmux has -t "${session}" 2>/dev/null && echo yes',
         });
 
-        /*
-         * Refer to README file for detailed config file format.
+        /**
+         * Refer to README.md file for detailed config file format
          */
-        this.entries = []; // CAUTION: remove all entries.
+        this.entries = []; // Remove all entries before loading them again
 
         let config_parser = new Json.Parser();
-        config_parser.load_from_file(filename);
+        config_parser.load_from_file(this._configurationFilename);
         let conf = convertJson(config_parser.get_root());
         if (conf.entries == undefined) {
             throw new Error("Key 'entries' not found.");
@@ -432,36 +450,42 @@ var Loader = new Lang.Class({
                 type_map[tname] = new DerivedEntry(conf.deftype[tname]);
             }
         }
-
+        // finally loading configuration in [this.entries]
         for (let conf_i in conf.entries) {
             let entry_prop = conf.entries[conf_i];
-            this.entries.push(createEntry(entry_prop));
+            this.entries.push(createEntry(entry_prop, this._menu));
         }
-    },
+    }
 
-
-    saveDefaultConfig: function(filename) {
-        // Write default config
+    /**
+     * Create a default configuration when it does not exists, just change it manually later if you need
+     */
+    saveDefaultConfig() {
         const PERMISSIONS_MODE = 0o640;
         const jsonString = JSON.stringify({
             "_homepage_": "https://github.com/andreabenini/gnome-plugin.custom-menu-panel",
             "_examples_": "https://github.com/andreabenini/gnome-plugin.custom-menu-panel/tree/main/examples",
-            "entries": [ {
-                "type": "launcher",
-                "title": "Edit menu",
-                "command": "gedit $HOME/.entries.json"
-            } ]
+            "entries": [ 
+                {
+                    "type": "launcher",
+                    "title": "Edit menu",
+                    "command": "gedit $HOME/.entries.json"
+                },
+                {
+                    "type": "reload",
+                    "title": "Reload Configuration"
+                }
+            ]
         }, null, 4);
-        let fileConfig = Gio.File.new_for_path(filename);
+        let fileConfig = Gio.File.new_for_path(this._configurationFilename);
         if (GLib.mkdir_with_parents(fileConfig.get_parent().get_path(), PERMISSIONS_MODE) === 0) {
             fileConfig.replace_contents(jsonString, null, false, Gio.FileCreateFlags.REPLACE_DESTINATION, null);
         }
         // Try to load newly saved file
         try {
-            this.loadConfig(filename);
+            this.loadConfig();
         } catch(e) {
-            Main.notify(_('Cannot create and load file: '+filename));
+            Main.notify(_('Cannot create and load file: '+this._configurationFilename));
         }
-    }, /**/
-
-});
+    }
+}; /**/
